@@ -15,7 +15,7 @@ module WeightKeeper
       @db_connection = SQLite3::Database.new(@sqlite_db_file)
   	end
 
-  	desc "add WEIGHT", "add your current weight to WeightKeeper"
+  	desc "add WEIGHT", "Add your current weight to WeightKeeper"
   	def add(weight)
   		entry = JournalEntry.new(@db_connection)
   		entry.weight = weight.to_f
@@ -27,7 +27,7 @@ module WeightKeeper
     def display_progress
       journal = JournalEntry.new(@db_connection)
       journal.total_weight_loss
-      @db_connection
+      @db_connection.close
     end
   end
 
@@ -66,8 +66,13 @@ module WeightKeeper
       current_weight_query = @db_connection.execute("SELECT weight FROM journal_entries ORDER BY rowid DESC LIMIT 1;")
       current_weight_result = nil
       current_weight_query.each { |value| current_weight_result = value.join.to_f }
+
       diff = weight_diff(starting_weight_result, current_weight_result)
-      puts "You have lost #{diff}lbs."
+      unless diff.nil?
+        puts "You have lost #{diff}lbs."
+      else
+        puts "You don't have any progress yet!"
+      end
     end
 
   	def weight_achievement
@@ -123,15 +128,18 @@ module WeightKeeper
   	end
 
   	def weight_diff(previous_weight, current_weight)
-  		(previous_weight - current_weight).round(2)
+      unless previous_weight.nil? || current_weight.nil?
+  		  (previous_weight - current_weight).round(2)
+      end
   	end
   end
 
   class Setup
   	class << self 
 
+      @@app_path = File.join(ENV["DOCKER_VOLUME_PATH"], "/.weight_keeper")
+
   		def create_application_directory
-  			@@app_path = File.join(ENV["DOCKER_VOLUME_PATH"], "/.weight_keeper")
   			FileUtils.mkdir_p(@@app_path) unless Dir.exist?(@@app_path)
   		end
 
