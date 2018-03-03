@@ -1,2 +1,2 @@
-# Ignore all files that get created/added to this directory.
-[^.]*
+# Ignore all app data that is created from the application.
+.weight_keeper/
