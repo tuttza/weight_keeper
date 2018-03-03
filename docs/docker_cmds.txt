@@ -1,0 +1,7 @@
+Docker Commands
+-----------------
+To Build image:
+	$ docker build -t weight-keeper .
+
+To run docker with host mount:
+	$ docker run -it -v C:\Users\zach_\source\repos\weight_keeper\container-data\:/app/data/ weight-keeper weight_keeper_command
