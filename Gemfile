@@ -7,3 +7,4 @@ gemspec
 
 gem 'sqlite3'
 gem 'thor'
+gem 'bundler'

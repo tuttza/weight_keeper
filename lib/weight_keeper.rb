@@ -6,19 +6,29 @@ require "securerandom"
 require "thor"
 
 module WeightKeeper
-  # Your code goes here...
 
   class CLI < Thor
-  	
+
+    def initialize(*args)
+      super
+      @sqlite_db_file = File.join(ENV["DOCKER_VOLUME_PATH"], "/.weight_keeper/db/weight_keeper.sqlite3")
+      @db_connection = SQLite3::Database.new(@sqlite_db_file)
+  	end
+
   	desc "add WEIGHT", "add your current weight to WeightKeeper"
   	def add(weight)
-  		sqlite_db_file = File.join(ENV["HOME"], "/.weight_keeper/db/weight_keeper.sqlite3")
-  		db_connection = SQLite3::Database.new(sqlite_db_file)
-  		entry = JournalEntry.new(db_connection)
+  		entry = JournalEntry.new(@db_connection)
   		entry.weight = weight.to_f
   		entry.insert { entry.weight_achievement }
-  		db_connection.close
+  		@db_connection.close
   	end
+
+    desc "display_progress", "Display the amount of weight you have lost to date."
+    def display_progress
+      journal = JournalEntry.new(@db_connection)
+      journal.total_weight_loss
+      @db_connection
+    end
   end
 
   class JournalEntry
@@ -48,14 +58,29 @@ module WeightKeeper
   		yield
   	end
 
+    def total_weight_loss
+      starting_weight_query = @db_connection.execute("SELECT weight FROM journal_entries WHERE rowid = 1;")
+      starting_weight_result = nil
+      starting_weight_query.each { |value| starting_weight_result = value.join.to_f }
+      
+      current_weight_query = @db_connection.execute("SELECT weight FROM journal_entries ORDER BY rowid DESC LIMIT 1;")
+      current_weight_result = nil
+      current_weight_query.each { |value| current_weight_result = value.join.to_f }
+      diff = weight_diff(starting_weight_result, current_weight_result)
+      puts "You have lost #{diff}lbs."
+    end
+
   	def weight_achievement
   		previous_weight = get_previous_weight
   		current_weight = get_last_inserted_weight
-  		diff = weight_diff(previous_weight, current_weight)
+
+      unless previous_weight.nil?
+  		  diff = weight_diff(previous_weight, current_weight)
   		
-  		if previous_weight > current_weight
-  			puts "Congrats! You lost #{diff}lbs"
-  		end
+    		if previous_weight > current_weight
+    			puts "Congrats! You lost #{diff}lbs"
+    		end
+      end
   	end
 
   	private 
@@ -70,7 +95,7 @@ module WeightKeeper
 	  			last_input_weight = value.join.to_f
 	  		end
   		rescue SQLite3::Exception => e
-  			puts "An error has occured"
+  			puts "An error has occured:"
   			puts e
   		ensure
 	  		last_input_weight_statement.close if last_input_weight_statement
@@ -89,7 +114,7 @@ module WeightKeeper
   				previous_weight = value.join.to_f
   			end
   		rescue SQLite3::Exception => e
-  			puts "An error has occured"
+  			puts "An error has occured:"
   			puts e
   		ensure
 	  		previous_weight_statement.close if previous_weight_statement
@@ -106,7 +131,7 @@ module WeightKeeper
   	class << self 
 
   		def create_application_directory
-  			@@app_path = File.join(ENV["HOME"], "/.weight_keeper")
+  			@@app_path = File.join(ENV["DOCKER_VOLUME_PATH"], "/.weight_keeper")
   			FileUtils.mkdir_p(@@app_path) unless Dir.exist?(@@app_path)
   		end
 
@@ -132,8 +157,10 @@ module WeightKeeper
   		end
 
   		def run
+        puts "initializing application..."
   			create_application_directory
   			init_db
+        puts "finished initializing application...DONE!"
   		end
   	end
 

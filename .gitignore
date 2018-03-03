@@ -1,0 +1,2 @@
+# Ignore all files that get created/added to this directory.
+[^.]*
