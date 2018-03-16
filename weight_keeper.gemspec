@@ -1,4 +1,3 @@
-
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "weight_keeper/version"
@@ -7,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.name          = "weight_keeper"
   spec.version       = WeightKeeper::VERSION
   spec.authors       = ["zach tuttle"]
-  spec.email         = ["zach.tuttle@protonmail.com"]
+  spec.email         = ["zach_tuttle@outlook.com"]
   spec.summary       = "Track your weight with ruby!"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
@@ -29,4 +28,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 1.16"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "minitest", "~> 5.0"
+  spec.ad
 end
